@@ -39,7 +39,7 @@ jobs:
         run: python validate_feed.py public/events.ics
       - name: Add landing page
         run: cp index.html public/index.html
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: public
       - id: deploy
