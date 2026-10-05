@@ -4,7 +4,7 @@ A calendar feed (ICS) of all events on <https://www.uds-triathlon.de/events/>, s
 
 **Feed URL:** `https://lrmyr.github.io/triathlon-event-calendar/events.ics`
 
-The feed is read-only and rebuilt every 4 hours. It is unofficial: the website stays the source of truth.
+The feed is read-only and rebuilt once a week, on Sunday morning. It is unofficial: the website stays the source of truth.
 
 ## Subscribe in Outlook
 
@@ -33,8 +33,8 @@ The calendar then appears under "Other calendars" and syncs to your other device
 
 ## Known limitations
 
-- **Courses and other multi-day events appear only on their first day.** When the website gives a date range without times (e.g. "17.09.26 – 05.10.26"), the feed has one all-day entry on the start date. The full range is in the description; the individual sessions are only on the event page.
-- **Changes take time to arrive.** The feed is rebuilt every 4 hours, and Outlook fetches subscribed calendars on its own schedule, which can be several hours up to a day. You cannot force a refresh in Outlook on the web.
+- **Courses running longer than a week appear only on their first day.** When the website gives a date range without times, the feed has one all-day entry. A range of up to 7 days (e.g. a weekend event) covers all its days. A longer range (e.g. "17.09.26 – 05.10.26") is marked on the start date only; the full range is in the description, and the individual sessions are only on the event page.
+- **Changes can take up to a week to arrive.** The feed is rebuilt every Sunday, so an event added or changed on the website on Monday shows up the following Sunday. Outlook then fetches subscribed calendars on its own schedule, which can add several hours up to a day.
 - **Only the short description is included**, not the full text of the event page. Registration happens on the website.
 - **A session whose start time changes** gets a new ID. Outlook then replaces the old entry with the new one at its next refresh.
 - **GitHub pauses scheduled workflows** in repositories without any activity for 60 days. GitHub sends an email first; re-enable the workflow under *Actions* if that happens.
@@ -50,7 +50,7 @@ The website has no calendar feed and no API for event dates. But every event pag
    - When an event has no end date, the site fills in the date the page was rendered. The feed uses the session's start date instead.
 4. Write `events.ics`, one `VEVENT` per session, with the ID `<post-id>-<session-start>@uds-triathlon.de`.
 
-A GitHub Actions workflow (`.github/workflows/feed.yml`) runs this every 4 hours, checks the result with `validate_feed.py`, and publishes it with GitHub Pages. If the website is unreachable or more than 20 % of the pages fail, the run fails and the last good feed stays online.
+A GitHub Actions workflow (`.github/workflows/feed.yml`) runs this every Sunday (and on demand), checks the result with `validate_feed.py`, and publishes it with GitHub Pages. If the website is unreachable or more than 20 % of the pages fail, the run fails and the last good feed stays online.
 
 Each run ends with a summary in the workflow log: events found, sessions written, sessions skipped, date-range events, and pages that could not be read, with the reason.
 

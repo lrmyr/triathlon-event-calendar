@@ -109,6 +109,20 @@ class SessionTests(unittest.TestCase):
         self.assertEqual(session.span_end, date(2027, 3, 31))
         self.assertIn("span", session.note)
 
+    def test_short_span_is_multi_day_all_day(self):
+        session = self.session("20261113T000000Z", "20261115T000000Z")
+        self.assertTrue(session.all_day)
+        self.assertEqual((session.start, session.end), (date(2026, 11, 13), date(2026, 11, 15)))
+        self.assertIsNone(session.span_end)
+        self.assertEqual(session.note, "")
+
+    def test_span_length_boundary(self):
+        week = self.session("20261102T000000Z", "20261108T000000Z")  # 7 days
+        self.assertEqual(week.end, date(2026, 11, 8))
+        longer = self.session("20261102T000000Z", "20261109T000000Z")  # 8 days
+        self.assertEqual(longer.end, date(2026, 11, 2))
+        self.assertEqual(longer.span_end, date(2026, 11, 9))
+
     def test_date_only_without_end_is_single_all_day(self):
         session = self.session("20261020T000000Z", "20261005T055856Z")
         self.assertTrue(session.all_day)
@@ -161,6 +175,17 @@ class FeedTests(unittest.TestCase):
         self.assertEqual(event["DTEND"].dt, date(2026, 10, 2))
         self.assertIn("01.10.2026 – 31.03.2027", str(event["DESCRIPTION"]))
         self.assertEqual(len(stats["flagged"]), 1)
+
+    def test_short_span_event(self):
+        calendar, stats, data = build([
+            ("u", page(3924, "Startup Weekend", [("20261113T000000Z", "20261115T000000Z")])),
+        ])
+        self.assertEqual(validate(data), [])
+        (event,) = calendar.walk("VEVENT")
+        self.assertEqual(event["DTSTART"].dt, date(2026, 11, 13))
+        self.assertEqual(event["DTEND"].dt, date(2026, 11, 16))  # exclusive
+        self.assertNotIn("Zeitraum", str(event["DESCRIPTION"]))
+        self.assertEqual(stats["flagged"], [])
 
     def test_old_sessions_are_skipped(self):
         calendar, stats, _ = build([

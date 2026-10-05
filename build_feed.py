@@ -33,9 +33,12 @@ USER_AGENT = (
 UID_DOMAIN = "uds-triathlon.de"
 BERLIN = ZoneInfo("Europe/Berlin")
 CALENDAR_NAME = "Triathlon Events"
-REFRESH = "PT4H"
+REFRESH = "P1D"
 
 MAX_AGE_DAYS = 30
+# Date ranges up to this many days become one multi-day all-day entry; longer
+# ones (courses running for weeks) only mark their start date.
+MAX_MULTI_DAY_SPAN = 7
 # The site puts the page-render date into date_end when an event has no end
 # date. Pages are cached, so that date can lag behind today by a bit.
 PLACEHOLDER_WINDOW_DAYS = 3
@@ -267,6 +270,8 @@ def build_session(event: Event, raw_start: str, raw_end: str, today: date) -> Se
         # No time of day set: an all-day entry. A real end date is also at
         # midnight; anything else is the page-render timestamp placeholder.
         if end.time() == midnight and end.date() > start.date():
+            if (end.date() - start.date()).days < MAX_MULTI_DAY_SPAN:
+                return Session(event, start.date(), end.date(), all_day=True)
             return Session(
                 event, start.date(), start.date(), all_day=True, span_end=end.date(),
                 note=f"span {start:%d.%m.%Y} - {end:%d.%m.%Y}, all-day entry on start date",
