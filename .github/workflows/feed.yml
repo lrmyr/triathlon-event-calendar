@@ -1,0 +1,46 @@
+name: Build and publish feed
+
+on:
+  schedule:
+    # every 4 hours, off the full hour where GitHub's scheduler is busiest
+    - cron: "17 */4 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}events.ics
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements-dev.txt
+      - name: Test
+        run: python -m unittest discover -s tests
+      # If the site is down this step fails and the last published feed stays up.
+      - name: Build feed
+        run: python build_feed.py --output public/events.ics
+      - name: Validate feed
+        run: python validate_feed.py public/events.ics
+      - name: Add landing page
+        run: cp index.html public/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: deploy
+        uses: actions/deploy-pages@v4
